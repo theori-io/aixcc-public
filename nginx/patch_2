@@ -1,0 +1,27 @@
+diff --git a/src/http/modules/ngx_http_userid_filter_module.c b/src/http/modules/ngx_http_userid_filter_module.c
+index 07163a0..7c0a540 100644
+--- a/src/http/modules/ngx_http_userid_filter_module.c
++++ b/src/http/modules/ngx_http_userid_filter_module.c
+@@ -353,8 +353,21 @@ ngx_http_userid_get_uid(ngx_http_request_t *r, ngx_http_userid_conf_t *conf)
+                       &cookie->value);
+         return ctx;
+     }
++    /* Limit the encoded string to a maximum of 32 characters for safety */
++    if (src.len > 32) {
++        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
++                      "client sent too long userid cookie \"%V\"",
++                      &cookie->value);
++        return ctx;
++    }
+ 
+-    src = ctx->cookie;
++    /* Ensure the cookie length is at least 22 characters for compatibility */
++    if (src.len < 22) {
++        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
++                      "client sent too short userid cookie \"%V\"",
++                      &cookie->value);
++        return ctx;
++    }
+ 
+     dst.data = (u_char *) ctx->uid_got;
+ 

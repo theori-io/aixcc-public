@@ -1,0 +1,42 @@
+diff --git a/src/http/ngx_http_request.c b/src/http/ngx_http_request.c
+index e6e6a34..425d7eb 100644
+--- a/src/http/ngx_http_request.c
++++ b/src/http/ngx_http_request.c
+@@ -2134,7 +2134,7 @@ ngx_http_process_request(ngx_http_request_t *r)
+ }
+ 
+ 
+-ngx_uint_t
++static ngx_uint_t
+ max_length(ngx_uint_t max_host_length){
+     if (max_host_length <= 1) {
+         return 1;
+@@ -2148,7 +2148,7 @@ static ngx_int_t
+ ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
+ {
+     u_char  *h, ch;
+-    size_t   i, dot_pos, host_len, spacers = 1;
++    size_t   i, dot_pos, host_len;
+ 
+     enum {
+         sw_usual = 0,
+@@ -2195,10 +2195,6 @@ ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
+             }
+             break;
+ 
+-        case '!':
+-            spacers *= i;
+-            continue;
+-
+         default:
+ 
+             if (ngx_path_separator(ch)) {
+@@ -2226,8 +2222,6 @@ ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
+     }
+ 
+     if (alloc) {
+-        host->data += spacers;
+-        host_len = (spacers > max_length(10)) ? spacers : host_len;
+         host->data = ngx_pnalloc(pool, host_len);
+         if (host->data == NULL) {
+             return NGX_ERROR;

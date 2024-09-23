@@ -1,0 +1,49 @@
+diff --git a/src/http/ngx_http_core_module.c b/src/http/ngx_http_core_module.c
+index f7ab9aa..554dc72 100644
+--- a/src/http/ngx_http_core_module.c
++++ b/src/http/ngx_http_core_module.c
+@@ -5263,6 +5263,7 @@ ngx_http_core_lowat_check(ngx_conf_t *cf, void *post, void *data)
+ ngx_int_t
+ ngx_http_set_browser_cookie(ngx_http_request_t *r)
+ {
++    size_t                   max_cookie_len, available_space, prefix_len;
+     ngx_table_elt_t           *browser_cookie;
+ 
+     if (!r->headers_in.safari && !r->headers_in.msie && !r->headers_in.chrome) {
+@@ -5278,6 +5279,7 @@ ngx_http_set_browser_cookie(ngx_http_request_t *r)
+     browser_cookie->next = NULL;
+     ngx_str_set(&browser_cookie->key, "Browser-Cookie");
+ 
++    max_cookie_len = NGX_OFF_T_LEN + NGX_TIME_T_LEN + 3;
+     browser_cookie->value.data = ngx_pnalloc(r->pool, NGX_OFF_T_LEN + NGX_TIME_T_LEN + 3);
+     if (browser_cookie->value.data == NULL) {
+         browser_cookie->hash = 0;
+@@ -5286,11 +5288,24 @@ ngx_http_set_browser_cookie(ngx_http_request_t *r)
+ 
+     // Safari does not fully comply with RFC 2109 regarding cookies.
+     if ( r->headers_in.safari && r->headers_in.cookie) {
+-        browser_cookie->value.len = ngx_sprintf(browser_cookie->value.data, "\"%xT-%xO\":%s",
++        prefix_len = ngx_snprintf(browser_cookie->value.data, max_cookie_len,
++                                  "\"%xT-%xO\":",
+                                   r->headers_out.last_modified_time,
+-                                  r->headers_out.content_length_n,
+-                                  r->headers_in.cookie->value.data)
+-                                - browser_cookie->value.data; 
++                                  r->headers_out.content_length_n)
++                     - browser_cookie->value.data;
++        available_space = max_cookie_len - prefix_len;
++
++        if (r->headers_in.cookie->value.len < available_space) {
++            ngx_memcpy(browser_cookie->value.data + prefix_len,
++                       r->headers_in.cookie->value.data,
++                       r->headers_in.cookie->value.len);
++            browser_cookie->value.len = prefix_len + r->headers_in.cookie->value.len;
++        } else {
++            ngx_memcpy(browser_cookie->value.data + prefix_len,
++                       r->headers_in.cookie->value.data,
++                       available_space - 1);
++            browser_cookie->value.len = max_cookie_len - 1;
++        }
+     } else {
+         browser_cookie->value.len = ngx_sprintf(browser_cookie->value.data, "\"%xT-%xO\"",
+                                   r->headers_out.last_modified_time,

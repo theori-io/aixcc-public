@@ -1,0 +1,11 @@
+GET / HTTP/1.1
+Prefer: respond-async
+User-Agent: PoV/1.0
+Host: example.url.com
+GET / HTTP/1.1
+Prefer: return=minimal
+User-Agent: PoV/1.0
+Host: example.url.com
+GET / HTTP/1.1
+User-Agent: PoV/1.0
+Host: example.url.com

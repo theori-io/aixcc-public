@@ -1,0 +1,21 @@
+diff --git a/src/http/ngx_http_script.c b/src/http/ngx_http_script.c
+index 090f39c..6f0ae17 100644
+--- a/src/http/ngx_http_script.c
++++ b/src/http/ngx_http_script.c
+@@ -1267,11 +1267,14 @@ ngx_http_script_regex_end_code(ngx_http_script_engine_t *e)
+     } else {
+         e->buf.len = e->pos - e->buf.data;
+ 
+-        if (e->buf.len > 2000) {
++        ngx_uint_t max_uri_len = 2000; // Make this configurable in the future
++        if (e->buf.len > max_uri_len) {
+             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+-                          "the rewritten URI is too long");
++                          "the rewritten URI is too long (%ui > %ui)",
++                          e->buf.len, max_uri_len);
+             e->ip = ngx_http_script_exit;
+             e->status = NGX_HTTP_INTERNAL_SERVER_ERROR;
++            return;
+         }
+ 
+         if (!code->add_args) {
